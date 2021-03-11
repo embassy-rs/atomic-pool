@@ -204,9 +204,9 @@ macro_rules! pool {
         $vis struct $name;
         impl $crate::Pool for $name {
             type Item = $ty;
-            type Storage = $crate::PoolStorageImpl<$ty, $size>;
+            type Storage = $crate::PoolStorageImpl<$ty, {$size}>;
             fn get() -> &'static Self::Storage {
-                static POOL: $crate::PoolStorageImpl<$ty, $size> = $crate::PoolStorageImpl::new();
+                static POOL: $crate::PoolStorageImpl<$ty, {$size}> = $crate::PoolStorageImpl::new();
                 &POOL
             }
         }
