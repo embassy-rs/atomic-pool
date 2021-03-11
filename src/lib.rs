@@ -10,7 +10,7 @@ pub(crate) mod fmt;
 mod atomic_bitset;
 
 use as_slice::{AsMutSlice, AsSlice};
-use core::cmp;
+use core::{cmp, mem, ptr::NonNull};
 use core::hash::{Hash, Hasher};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
@@ -20,8 +20,8 @@ use crate::atomic_bitset::AtomicBitset;
 use crate::fmt::{assert, *};
 
 pub trait PoolStorage<T> {
-    fn alloc(&self) -> Option<*mut T>;
-    unsafe fn free(&self, p: *mut T);
+    fn alloc(&self) -> Option<NonNull<T>>;
+    unsafe fn free(&self, p: NonNull<T>);
 }
 
 pub struct PoolStorageImpl<T, const N: usize>
@@ -48,16 +48,16 @@ impl<T, const N: usize> PoolStorage<T> for PoolStorageImpl<T, N>
 where
     [AtomicU32; (N + 31) / 32]: Sized,
 {
-    fn alloc(&self) -> Option<*mut T> {
+    fn alloc(&self) -> Option<NonNull<T>> {
         let n = self.used.alloc()?;
         let origin = self.data.as_ptr() as *mut T;
-        Some(unsafe { origin.add(n) })
+        Some(unsafe { NonNull::new_unchecked(origin.add(n)) })
     }
 
     /// safety: p must be a pointer obtained from self.alloc that hasn't been freed yet.
-    unsafe fn free(&self, p: *mut T) {
+    unsafe fn free(&self, p: NonNull<T>) {
         let origin = self.data.as_ptr() as *mut T;
-        let n = p.offset_from(origin);
+        let n = p.as_ptr().offset_from(origin);
         assert!(n >= 0);
         assert!((n as usize) < N);
         self.used.free(n as usize);
@@ -71,7 +71,7 @@ pub trait Pool: 'static {
 }
 
 pub struct Box<P: Pool> {
-    ptr: *mut P::Item,
+    ptr: NonNull<P::Item>,
 }
 
 impl<P: Pool> Box<P> {
@@ -84,8 +84,18 @@ impl<P: Pool> Box<P> {
             }
         };
         //trace!("allocated {:u32}", p as u32);
-        unsafe { p.write(item) };
+        unsafe { p.as_ptr().write(item) };
         Some(Self { ptr: p })
+    }
+
+    pub fn into_raw(b: Self) -> NonNull<P::Item> {
+        let res = b.ptr;
+        mem::forget(b);
+        res
+    }
+
+    pub unsafe fn from_raw(ptr: NonNull<P::Item>) -> Self {
+        Self { ptr }
     }
 }
 
@@ -93,7 +103,7 @@ impl<P: Pool> Drop for Box<P> {
     fn drop(&mut self) {
         unsafe {
             //trace!("dropping {:u32}", self.ptr as u32);
-            self.ptr.drop_in_place();
+            self.ptr.as_ptr().drop_in_place();
             P::get().free(self.ptr);
         };
     }
@@ -129,13 +139,13 @@ impl<P: Pool> Deref for Box<P> {
     type Target = P::Item;
 
     fn deref(&self) -> &P::Item {
-        unsafe { &*self.ptr }
+        unsafe { self.ptr.as_ref() }
     }
 }
 
 impl<P: Pool> DerefMut for Box<P> {
     fn deref_mut(&mut self) -> &mut P::Item {
-        unsafe { &mut *self.ptr }
+        unsafe { self.ptr.as_mut() }
     }
 }
 
