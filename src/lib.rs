@@ -1,4 +1,4 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![feature(const_fn)]
 #![feature(const_generics)]
 #![feature(const_evaluatable_checked)]
@@ -10,14 +10,14 @@ pub(crate) mod fmt;
 mod atomic_bitset;
 
 use as_slice::{AsMutSlice, AsSlice};
-use core::{cmp, mem, ptr::NonNull};
 use core::hash::{Hash, Hasher};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::AtomicU32;
+use core::{cmp, mem, ptr::NonNull};
 
 use crate::atomic_bitset::AtomicBitset;
-use crate::fmt::{assert, *};
+use crate::fmt::assert;
 
 pub trait PoolStorage<T> {
     fn alloc(&self) -> Option<NonNull<T>>;
@@ -221,4 +221,30 @@ macro_rules! pool {
             }
         }
     };
+}
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    pool!(TestPool: [u32; 4]);
+
+    #[test]
+    fn test_pool() {
+        let b1 = Box::<TestPool>::new(111).unwrap();
+        let b2 = Box::<TestPool>::new(222).unwrap();
+        let b3 = Box::<TestPool>::new(333).unwrap();
+        let b4 = Box::<TestPool>::new(444).unwrap();
+        assert!(Box::<TestPool>::new(555).is_none());
+        assert_eq!(*b1, 111);
+        assert_eq!(*b2, 222);
+        assert_eq!(*b3, 333);
+        assert_eq!(*b4, 444);
+        mem::drop(b3);
+        let b5 = Box::<TestPool>::new(555).unwrap();
+        assert!(Box::<TestPool>::new(666).is_none());
+        assert_eq!(*b1, 111);
+        assert_eq!(*b2, 222);
+        assert_eq!(*b4, 444);
+        assert_eq!(*b5, 555);
+    }
 }
