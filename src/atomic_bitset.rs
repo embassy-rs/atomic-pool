@@ -1,7 +1,5 @@
 use atomic_polyfill::{AtomicU32, Ordering};
 
-use crate::fmt::assert;
-
 pub struct AtomicBitset<const N: usize>
 where
     [AtomicU32; (N + 31) / 32]: Sized,

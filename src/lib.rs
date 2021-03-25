@@ -1,11 +1,8 @@
-#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(test), no_std)]
 #![feature(const_fn)]
 #![feature(const_generics)]
 #![feature(const_evaluatable_checked)]
 #![allow(incomplete_features)]
-
-// This mod MUST go first, so that the others see its macros.
-pub(crate) mod fmt;
 
 mod atomic_bitset;
 
@@ -17,7 +14,6 @@ use core::sync::atomic::AtomicU32;
 use core::{cmp, mem, ptr::NonNull};
 
 use crate::atomic_bitset::AtomicBitset;
-use crate::fmt::assert;
 
 pub trait PoolStorage<T> {
     fn alloc(&self) -> Option<NonNull<T>>;
@@ -78,12 +74,8 @@ impl<P: Pool> Box<P> {
     pub fn new(item: P::Item) -> Option<Self> {
         let p = match P::get().alloc() {
             Some(p) => p,
-            None => {
-                warn!("alloc failed!");
-                return None;
-            }
+            None => return None,
         };
-        //trace!("allocated {:u32}", p as u32);
         unsafe { p.as_ptr().write(item) };
         Some(Self { ptr: p })
     }
