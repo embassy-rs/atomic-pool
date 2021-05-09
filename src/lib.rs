@@ -11,11 +11,15 @@ use core::{cmp, mem, ptr::NonNull};
 
 use crate::atomic_bitset::AtomicBitset;
 
+/// Implementation detail. Not covered by semver guarantees.
+#[doc(hidden)]
 pub trait PoolStorage<T> {
     fn alloc(&self) -> Option<NonNull<T>>;
     unsafe fn free(&self, p: NonNull<T>);
 }
 
+/// Implementation detail. Not covered by semver guarantees.
+#[doc(hidden)]
 pub struct PoolStorageImpl<T, const N: usize, const K: usize>
 where
     [AtomicU32; K]: Sized,
@@ -58,7 +62,13 @@ where
 
 pub trait Pool: 'static {
     type Item: 'static;
+
+    /// Implementation detail. Not covered by semver guarantees.
+    #[doc(hidden)]
     type Storage: PoolStorage<Self::Item>;
+
+    /// Implementation detail. Not covered by semver guarantees.
+    #[doc(hidden)]
     fn get() -> &'static Self::Storage;
 }
 
@@ -199,7 +209,7 @@ where
 #[macro_export]
 macro_rules! pool {
     ($vis:vis $name:ident: [$ty:ty; $n:expr]) => {
-        $vis struct $name;
+        $vis struct $name { _uninhabited: ::core::convert::Infallible }
         impl $crate::Pool for $name {
             type Item = $ty;
             type Storage = $crate::PoolStorageImpl<$ty, $n, {($n+31)/32}>;
