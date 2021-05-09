@@ -1,8 +1,4 @@
 #![cfg_attr(not(test), no_std)]
-#![feature(const_fn)]
-#![feature(const_generics)]
-#![feature(const_evaluatable_checked)]
-#![allow(incomplete_features)]
 
 mod atomic_bitset;
 
@@ -20,17 +16,17 @@ pub trait PoolStorage<T> {
     unsafe fn free(&self, p: NonNull<T>);
 }
 
-pub struct PoolStorageImpl<T, const N: usize>
+pub struct PoolStorageImpl<T, const N: usize, const K: usize>
 where
-    [AtomicU32; (N + 31) / 32]: Sized,
+    [AtomicU32; K]: Sized,
 {
-    used: AtomicBitset<N>,
+    used: AtomicBitset<N, K>,
     data: MaybeUninit<[T; N]>,
 }
 
-impl<T, const N: usize> PoolStorageImpl<T, N>
+impl<T, const N: usize, const K: usize> PoolStorageImpl<T, N, K>
 where
-    [AtomicU32; (N + 31) / 32]: Sized,
+    [AtomicU32; K]: Sized,
 {
     pub const fn new() -> Self {
         Self {
@@ -40,9 +36,9 @@ where
     }
 }
 
-impl<T, const N: usize> PoolStorage<T> for PoolStorageImpl<T, N>
+impl<T, const N: usize, const K: usize> PoolStorage<T> for PoolStorageImpl<T, N, K>
 where
-    [AtomicU32; (N + 31) / 32]: Sized,
+    [AtomicU32; K]: Sized,
 {
     fn alloc(&self) -> Option<NonNull<T>> {
         let n = self.used.alloc()?;
@@ -202,13 +198,13 @@ where
 
 #[macro_export]
 macro_rules! pool {
-    ($vis:vis $name:ident: [$ty:ty; $size:expr]) => {
+    ($vis:vis $name:ident: [$ty:ty; $n:expr]) => {
         $vis struct $name;
         impl $crate::Pool for $name {
             type Item = $ty;
-            type Storage = $crate::PoolStorageImpl<$ty, {$size}>;
+            type Storage = $crate::PoolStorageImpl<$ty, $n, {($n+31)/32}>;
             fn get() -> &'static Self::Storage {
-                static POOL: $crate::PoolStorageImpl<$ty, {$size}> = $crate::PoolStorageImpl::new();
+                static POOL: $crate::PoolStorageImpl<$ty, $n, {($n+31)/32}> = $crate::PoolStorageImpl::new();
                 &POOL
             }
         }

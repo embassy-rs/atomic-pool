@@ -1,21 +1,19 @@
 use atomic_polyfill::{AtomicU32, Ordering};
 
-pub struct AtomicBitset<const N: usize>
+pub struct AtomicBitset<const N: usize, const K: usize>
 where
-    [AtomicU32; (N + 31) / 32]: Sized,
+    [AtomicU32; K]: Sized,
 {
-    used: [AtomicU32; (N + 31) / 32],
+    used: [AtomicU32; K],
 }
 
-impl<const N: usize> AtomicBitset<N>
+impl<const N: usize, const K: usize> AtomicBitset<N, K>
 where
-    [AtomicU32; (N + 31) / 32]: Sized,
+    [AtomicU32; K]: Sized,
 {
     pub const fn new() -> Self {
         const Z: AtomicU32 = AtomicU32::new(0);
-        Self {
-            used: [Z; (N + 31) / 32],
-        }
+        Self { used: [Z; K] }
     }
 
     pub fn alloc(&self) -> Option<usize> {
@@ -56,7 +54,7 @@ mod test {
 
     #[test]
     fn test_16() {
-        let s = AtomicBitset::<16>::new();
+        let s = AtomicBitset::<16, 1>::new();
         for i in 0..16 {
             assert_eq!(s.alloc(), Some(i));
         }
@@ -74,7 +72,7 @@ mod test {
 
     #[test]
     fn test_32() {
-        let s = AtomicBitset::<32>::new();
+        let s = AtomicBitset::<32, 1>::new();
         for i in 0..32 {
             assert_eq!(s.alloc(), Some(i));
         }
@@ -92,7 +90,7 @@ mod test {
 
     #[test]
     fn test_48() {
-        let s = AtomicBitset::<48>::new();
+        let s = AtomicBitset::<48, 2>::new();
         for i in 0..48 {
             assert_eq!(s.alloc(), Some(i));
         }
@@ -111,7 +109,7 @@ mod test {
     }
     #[test]
     fn test_64() {
-        let s = AtomicBitset::<64>::new();
+        let s = AtomicBitset::<64, 2>::new();
         for i in 0..64 {
             assert_eq!(s.alloc(), Some(i));
         }
@@ -133,7 +131,7 @@ mod test {
 
     #[test]
     fn test_31337() {
-        let s = AtomicBitset::<31337>::new();
+        let s = AtomicBitset::<31337, 980>::new();
         for i in 0..31337 {
             assert_eq!(s.alloc(), Some(i));
         }
