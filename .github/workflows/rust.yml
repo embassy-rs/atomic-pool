@@ -12,12 +12,16 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        include:
+          - toolchain: nightly
+          - toolchain: stable
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: ${{ matrix.toolchain }}
           override: true
       - name: install
         run: rustup target add thumbv7em-none-eabi thumbv6m-none-eabi
