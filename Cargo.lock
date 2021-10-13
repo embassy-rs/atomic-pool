@@ -34,7 +34,7 @@ dependencies = [
 
 [[package]]
 name = "atomic-pool"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "as-slice 0.1.5",
  "as-slice 0.2.1",
