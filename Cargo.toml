@@ -16,5 +16,6 @@ categories = [
 
 [dependencies]
 atomic-polyfill = "0.1.1"
-as-slice            = { version = "0.1.4" }
+as-slice-01           = { package = "as-slice", version = "0.1.5" }
+as-slice-02           = { package = "as-slice", version = "0.2.1" }
 stable_deref_trait  = { version = "1.2.0", default-features = false }

@@ -2,7 +2,6 @@
 
 mod atomic_bitset;
 
-use as_slice::{AsMutSlice, AsSlice};
 use core::hash::{Hash, Hasher};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
@@ -113,20 +112,40 @@ unsafe impl<P: Pool> Sync for Box<P> where P::Item: Sync {}
 
 unsafe impl<P: Pool> stable_deref_trait::StableDeref for Box<P> {}
 
-impl<P: Pool> AsSlice for Box<P>
+impl<P: Pool> as_slice_01::AsSlice for Box<P>
 where
-    P::Item: AsSlice,
+    P::Item: as_slice_01::AsSlice,
 {
-    type Element = <P::Item as AsSlice>::Element;
+    type Element = <P::Item as as_slice_01::AsSlice>::Element;
 
     fn as_slice(&self) -> &[Self::Element] {
         self.deref().as_slice()
     }
 }
 
-impl<P: Pool> AsMutSlice for Box<P>
+impl<P: Pool> as_slice_01::AsMutSlice for Box<P>
 where
-    P::Item: AsMutSlice,
+    P::Item: as_slice_01::AsMutSlice,
+{
+    fn as_mut_slice(&mut self) -> &mut [Self::Element] {
+        self.deref_mut().as_mut_slice()
+    }
+}
+
+impl<P: Pool> as_slice_02::AsSlice for Box<P>
+where
+    P::Item: as_slice_02::AsSlice,
+{
+    type Element = <P::Item as as_slice_02::AsSlice>::Element;
+
+    fn as_slice(&self) -> &[Self::Element] {
+        self.deref().as_slice()
+    }
+}
+
+impl<P: Pool> as_slice_02::AsMutSlice for Box<P>
+where
+    P::Item: as_slice_02::AsMutSlice,
 {
     fn as_mut_slice(&mut self) -> &mut [Self::Element] {
         self.deref_mut().as_mut_slice()
