@@ -1,6 +1,6 @@
 [package]
 name = "atomic-pool"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Dario Nieuwenhuis <dirbaio@dirbaio.net>"]
 description = "Statically allocated pool providing a std-like Box."
 repository = "https://github.com/embassy-rs/atomic-pool"
