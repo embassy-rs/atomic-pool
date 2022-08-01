@@ -2,6 +2,7 @@
 
 mod atomic_bitset;
 
+use core::cell::UnsafeCell;
 use core::hash::{Hash, Hasher};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
@@ -24,17 +25,22 @@ where
     [AtomicU32; K]: Sized,
 {
     used: AtomicBitset<N, K>,
-    data: MaybeUninit<[T; N]>,
+    data: [UnsafeCell<MaybeUninit<T>>; N],
 }
+
+unsafe impl<T, const N: usize, const K: usize> Send for PoolStorageImpl<T, N, K> {}
+unsafe impl<T, const N: usize, const K: usize> Sync for PoolStorageImpl<T, N, K> {}
 
 impl<T, const N: usize, const K: usize> PoolStorageImpl<T, N, K>
 where
     [AtomicU32; K]: Sized,
 {
+    const UNINIT: UnsafeCell<MaybeUninit<T>> = UnsafeCell::new(MaybeUninit::uninit());
+
     pub const fn new() -> Self {
         Self {
             used: AtomicBitset::new(),
-            data: MaybeUninit::uninit(),
+            data: [Self::UNINIT; N],
         }
     }
 }
@@ -45,8 +51,8 @@ where
 {
     fn alloc(&self) -> Option<NonNull<T>> {
         let n = self.used.alloc()?;
-        let origin = self.data.as_ptr() as *mut T;
-        Some(unsafe { NonNull::new_unchecked(origin.add(n)) })
+        let p = self.data[n].get() as *mut T;
+        Some(unsafe { NonNull::new_unchecked(p) })
     }
 
     /// safety: p must be a pointer obtained from self.alloc that hasn't been freed yet.
