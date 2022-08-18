@@ -129,6 +129,7 @@ mod test {
         assert_eq!(s.alloc(), None);
     }
 
+    #[cfg(not(miri))] // too slow
     #[test]
     fn test_31337() {
         let s = AtomicBitset::<31337, 980>::new();
