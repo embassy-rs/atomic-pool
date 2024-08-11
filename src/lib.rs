@@ -92,9 +92,11 @@ impl<P: Pool> Box<P> {
         Some(Self { ptr: p })
     }
     /// Attempt to allocate a potentially unitialized item from the pool.
-    /// 
-    /// This means, that data from a previous allocation may still be present or the memory is still uninitialized, so caution is advised.
-    pub unsafe fn new_potentially_uninit() -> Option<Self> {
+    ///
+    /// # Safety
+    /// The area of memory, to which this box points, maybe uninitialized or contain data from a previous allocation.
+    /// You must ensure, that you handle this properly and initialize it yourself.
+    pub unsafe fn new_uninit() -> Option<Self> {
         let p = match P::get().alloc() {
             Some(p) => p,
             None => return None,
@@ -102,12 +104,21 @@ impl<P: Pool> Box<P> {
         Some(Self { ptr: p })
     }
 
+    /// Turn this box into a raw pointer.
+    /// 
+    /// Once you turn a box into a raw pointer, it becomes your responsibility to free it properly again. 
+    /// This can be done, by creating a box from that raw pointer again, using [Self::from_raw].
     pub fn into_raw(b: Self) -> NonNull<P::Item> {
         let res = b.ptr;
         mem::forget(b);
         res
     }
 
+    /// Create a box from a raw pointer.
+    /// 
+    /// # Safety
+    /// You must ensure, that the pointer points to valid memory, which was allocated from the pool in the generic parameter.
+    /// If you fail to do so, this will trigger a panic, once this box is dropped.
     pub unsafe fn from_raw(ptr: NonNull<P::Item>) -> Self {
         Self { ptr }
     }
