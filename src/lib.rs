@@ -90,6 +90,13 @@ impl<P: Pool> Box<P> {
         unsafe { p.as_ptr().write(item) };
         Some(Self { ptr: p })
     }
+    pub unsafe fn new_potentially_uninit() -> Option<Self> {
+        let p = match P::get().alloc() {
+            Some(p) => p,
+            None => return None,
+        };
+        Some(Self { ptr: p })
+    }
 
     pub fn into_raw(b: Self) -> NonNull<P::Item> {
         let res = b.ptr;
