@@ -44,7 +44,6 @@ where
         }
     }
 }
-
 impl<T, const N: usize, const K: usize> PoolStorage<T> for PoolStorageImpl<T, N, K>
 where
     [AtomicU32; K]: Sized,
@@ -77,11 +76,13 @@ pub trait Pool: 'static {
     fn get() -> &'static Self::Storage;
 }
 
+/// A statically allocated box.
 pub struct Box<P: Pool> {
     ptr: NonNull<P::Item>,
 }
 
 impl<P: Pool> Box<P> {
+    /// Attempt to allocate a new item from the pool.
     pub fn new(item: P::Item) -> Option<Self> {
         let p = match P::get().alloc() {
             Some(p) => p,
@@ -90,6 +91,9 @@ impl<P: Pool> Box<P> {
         unsafe { p.as_ptr().write(item) };
         Some(Self { ptr: p })
     }
+    /// Attempt to allocate a potentially unitialized item from the pool.
+    /// 
+    /// This means, that data from a previous allocation may still be present or the memory is still uninitialized, so caution is advised.
     pub unsafe fn new_potentially_uninit() -> Option<Self> {
         let p = match P::get().alloc() {
             Some(p) => p,
@@ -239,6 +243,9 @@ where
 }
 
 #[macro_export]
+/// Create a new pool.
+///
+/// This macro has to variants, one where the pool is uninitialized and another, where it is initialized to some initial value.
 macro_rules! pool {
     ($vis:vis $name:ident: [$ty:ty; $n:expr]) => {
         $vis struct $name { _uninhabited: ::core::convert::Infallible }
