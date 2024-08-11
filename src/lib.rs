@@ -25,7 +25,7 @@ where
     [AtomicU32; K]: Sized,
 {
     used: AtomicBitset<N, K>,
-    data: [UnsafeCell<MaybeUninit<T>>; N],
+    pub data: [UnsafeCell<MaybeUninit<T>>; N],
 }
 
 unsafe impl<T, const N: usize, const K: usize> Send for PoolStorageImpl<T, N, K> {}
@@ -240,6 +240,21 @@ macro_rules! pool {
             type Storage = $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}>;
             fn get() -> &'static Self::Storage {
                 static POOL: $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}> = $crate::PoolStorageImpl::new();
+                &POOL
+            }
+        }
+    };
+    ($vis:vis $name:ident: [$ty:ty; $n:expr], $initial_value:expr) => {
+        $vis struct $name { _uninhabited: ::core::convert::Infallible }
+        impl $crate::Pool for $name {
+            type Item = $ty;
+            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}>;
+            fn get() -> &'static Self::Storage {
+                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}> = {
+                    let mut pool_storage_impl = $crate::PoolStorageImpl::new();
+                    pool_storage_impl.data = unsafe { ::core::mem::transmute($initial_value) };
+                    pool_storage_impl
+                };
                 &POOL
             }
         }
