@@ -1,9 +1,11 @@
-use atomic_pool::{pool, Box};
-use std::mem;
+use atomic_pool::pool;
 
 pool!(TestPool: [u32; 3]);
 
+#[cfg(feature = "alloc_uninit")]
 fn main() {
+    use atomic_pool::Box;
+    use std::mem;
     let mut buffer = unsafe { Box::<TestPool>::new_uninit() }.unwrap();
     println!("Allocated new buffer.");
 
@@ -21,3 +23,5 @@ fn main() {
         *reallocated_buffer
     );
 }
+#[cfg(not(feature = "alloc_uninit"))]
+fn main() {}
