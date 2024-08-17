@@ -1,11 +1,11 @@
 use atomic_pool::{pool, Box};
 use std::mem;
 
-pool!(TestPool: [u32; 3], [0u32; 3]);
+pool!(TestPool: [u32; 3]);
 
 fn main() {
     let mut buffer = unsafe { Box::<TestPool>::new_uninit() }.unwrap();
-    println!("Allocated new buffer, with contents: {:#x}", *buffer);
+    println!("Allocated new buffer.");
 
     *buffer = 0xf00dbabeu32;
 
@@ -17,7 +17,7 @@ fn main() {
 
     let reallocated_buffer = unsafe { Box::<TestPool>::new_uninit() }.unwrap();
     println!(
-        "Reallocated buffer, with contents: 0x{:#x}",
+        "Reallocated buffer, with contents: {:#x}",
         *reallocated_buffer
     );
 }

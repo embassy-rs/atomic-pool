@@ -105,8 +105,8 @@ impl<P: Pool> Box<P> {
     }
 
     /// Turn this box into a raw pointer.
-    /// 
-    /// Once you turn a box into a raw pointer, it becomes your responsibility to free it properly again. 
+    ///
+    /// Once you turn a box into a raw pointer, it becomes your responsibility to free it properly again.
     /// This can be done, by creating a box from that raw pointer again, using [Self::from_raw].
     pub fn into_raw(b: Self) -> NonNull<P::Item> {
         let res = b.ptr;
@@ -115,7 +115,7 @@ impl<P: Pool> Box<P> {
     }
 
     /// Create a box from a raw pointer.
-    /// 
+    ///
     /// # Safety
     /// You must ensure, that the pointer points to valid memory, which was allocated from the pool in the generic parameter.
     /// If you fail to do so, this will trigger a panic, once this box is dropped.
@@ -265,21 +265,6 @@ macro_rules! pool {
             type Storage = $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}>;
             fn get() -> &'static Self::Storage {
                 static POOL: $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}> = $crate::PoolStorageImpl::new();
-                &POOL
-            }
-        }
-    };
-    ($vis:vis $name:ident: [$ty:ty; $n:expr], $initial_value:expr) => {
-        $vis struct $name { _uninhabited: ::core::convert::Infallible }
-        impl $crate::Pool for $name {
-            type Item = $ty;
-            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}>;
-            fn get() -> &'static Self::Storage {
-                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}> = {
-                    let mut pool_storage_impl = $crate::PoolStorageImpl::new();
-                    pool_storage_impl.data = unsafe { ::core::mem::transmute($initial_value) };
-                    pool_storage_impl
-                };
                 &POOL
             }
         }
