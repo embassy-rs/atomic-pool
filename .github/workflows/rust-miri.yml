@@ -20,4 +20,4 @@ jobs:
           override: true
           components: miri
       - name: Test
-        run: cargo miri test
+        run: cargo miri test --all-features

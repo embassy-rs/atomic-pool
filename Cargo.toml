@@ -7,15 +7,31 @@ repository = "https://github.com/embassy-rs/atomic-pool"
 edition = "2021"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
-categories = [
-    "embedded",
-    "no-std",
-    "concurrency",
-    "memory-management",
-]
+categories = ["embedded", "no-std", "concurrency", "memory-management"]
 
 [dependencies]
 atomic-polyfill = "1.0"
 as-slice-01 = { package = "as-slice", version = "0.1.5" }
 as-slice-02 = { package = "as-slice", version = "0.2.1" }
 stable_deref_trait = { version = "1.2.0", default-features = false }
+embassy-sync = { version = "0.6.0", optional = true }
+
+# Used by async_std example and async tests
+[dev-dependencies]
+embassy-executor = { version = "0.6.0", features = ["arch-std","executor-thread","integrated-timers","task-arena-size-32768"] }
+embassy-time = { version = "0.3.2", features = ["std"] }
+embassy-futures = "0.1.1"
+critical-section = { version = "1.1", features = ["std"] }
+
+[features]
+default = []
+
+# Allow to asynchronously wait for a pool slot to become available.
+# This feature is optional and requires the `AtomicWaker` functionality from 
+# the `embassy-sync` crate, which in turn requires a critical section
+# implementation. Check: https://crates.io/crates/critical-section
+async = ["dep:embassy-sync"]
+
+[[example]]
+name = "async_std"
+required-features = ["async"]

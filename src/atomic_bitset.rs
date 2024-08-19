@@ -1,5 +1,9 @@
+#[cfg(feature = "async")]
+pub mod droppable_bit;
+
 use atomic_polyfill::{AtomicU32, Ordering};
 
+/// A bitset that can be used to allocate slots in a pool
 pub struct AtomicBitset<const N: usize, const K: usize>
 where
     [AtomicU32; K]: Sized,
@@ -14,6 +18,11 @@ where
     pub const fn new() -> Self {
         const Z: AtomicU32 = AtomicU32::new(0);
         Self { used: [Z; K] }
+    }
+
+    #[cfg(feature = "async")]
+    pub fn alloc_droppable(&self) -> Option<droppable_bit::DroppableBit<N, K>> {
+        self.alloc().map(|i| droppable_bit::DroppableBit::new(self, i))
     }
 
     pub fn alloc(&self) -> Option<usize> {

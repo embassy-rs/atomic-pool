@@ -3,6 +3,7 @@ use std::mem;
 use atomic_pool::{pool, Box};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct Packet(u32);
 
 pool!(PacketPool: [Packet; 4]);

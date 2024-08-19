@@ -4,6 +4,10 @@
 
 Statically allocated pool providing a std-like Box.
 
+## Optional Features
+- `async`<br>
+Allow to asynchronously wait for a pool slot to become available. This feature requires the `AtomicWaker` functionality from the `embassy-sync` crate, which in turn requires a critical section implementation like [critical-section](https://crates.io/crates/critical-section).
+
 ## License
 
 This work is licensed under either of
