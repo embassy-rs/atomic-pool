@@ -4,6 +4,22 @@
 
 Statically allocated pool providing a std-like Box.
 
+## Support for targets without atomic CAS
+
+This crate uses [`portable-atomic`](https://crates.io/crates/portable-atomic) to polyfill atomic
+compare-and-swap operations on targets without native hardware support for it.
+
+To use it, you must add a dependency on `portable-atomic` and enable one of its features to
+specify how the polyfilling is done. The feature is typically `unsafe-assume-single-core` for
+single-core chips running in supervisor mode, or `critical-section` otherwise. Check `portable-atomic`'s
+README for more details.
+
+```toml
+[dependencies]
+atomic-pool = "2.0"
+portable-atomic = { version = "1", default-features = false, features = ["critical-section"] }
+```
+
 ## License
 
 This work is licensed under either of
