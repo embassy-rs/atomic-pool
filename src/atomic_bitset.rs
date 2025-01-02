@@ -1,4 +1,4 @@
-use atomic_polyfill::{AtomicU32, Ordering};
+use portable_atomic::{AtomicU32, Ordering};
 
 pub struct AtomicBitset<const N: usize, const K: usize>
 where

@@ -2,12 +2,12 @@
 
 mod atomic_bitset;
 
-use atomic_polyfill::AtomicU32;
 use core::cell::UnsafeCell;
 use core::hash::{Hash, Hasher};
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use core::{cmp, mem, ptr::NonNull};
+use portable_atomic::AtomicU32;
 
 use crate::atomic_bitset::AtomicBitset;
 
