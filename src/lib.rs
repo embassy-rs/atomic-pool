@@ -237,9 +237,9 @@ macro_rules! pool {
         $vis struct $name { _uninhabited: ::core::convert::Infallible }
         impl $crate::Pool for $name {
             type Item = $ty;
-            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}>;
+            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,32)}>;
             fn get() -> &'static Self::Storage {
-                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}> = $crate::PoolStorageImpl::new();
+                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,32)}> = $crate::PoolStorageImpl::new();
                 &POOL
             }
         }
