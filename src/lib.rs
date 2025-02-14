@@ -11,6 +11,9 @@ use portable_atomic::AtomicU32;
 
 use crate::atomic_bitset::AtomicBitset;
 
+/// `AtomicU32` has the same number of bits as `u32`
+pub const ATOMICU32_BITS: usize = u32::BITS as usize;
+
 /// Implementation detail. Not covered by semver guarantees.
 #[doc(hidden)]
 pub trait PoolStorage<T> {
@@ -244,9 +247,9 @@ macro_rules! pool {
         $vis struct $name { _uninhabited: ::core::convert::Infallible }
         impl $crate::Pool for $name {
             type Item = $ty;
-            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,32)}>;
+            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,$crate::ATOMICU32_BITS)}>;
             fn get() -> &'static Self::Storage {
-                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,32)}> = $crate::PoolStorageImpl::new();
+                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,$crate::ATOMICU32_BITS)}> = $crate::PoolStorageImpl::new();
                 &POOL
             }
         }

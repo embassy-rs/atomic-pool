@@ -1,5 +1,7 @@
 use portable_atomic::{AtomicU32, Ordering};
 
+use crate::ATOMICU32_BITS;
+
 pub struct AtomicBitset<const N: usize, const K: usize>
 where
     [AtomicU32; K]: Sized,
@@ -21,10 +23,10 @@ where
         for (i, val) in self.used.iter().enumerate() {
             let mut allocated = 0;
             let res = val.fetch_update(Ordering::AcqRel, Ordering::Acquire, |val| {
-                let zero_bit = val.trailing_ones();
-                let maybe_allocated = zero_bit as usize + i * 32;
+                let zero_bit = val.trailing_ones() as usize;
+                let maybe_allocated = zero_bit + i * ATOMICU32_BITS;
 
-                if zero_bit == 32 {
+                if zero_bit == ATOMICU32_BITS {
                     // there are no zero bits
                     None
                 } else if maybe_allocated >= N {
@@ -45,7 +47,8 @@ where
     }
     pub fn free(&self, i: usize) {
         assert!(i < N);
-        self.used[i / 32].fetch_and(!(1 << ((i % 32) as u32)), Ordering::AcqRel);
+        self.used[i / ATOMICU32_BITS]
+            .fetch_and(!(1 << ((i % ATOMICU32_BITS) as u32)), Ordering::AcqRel);
     }
 }
 
