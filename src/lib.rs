@@ -61,13 +61,13 @@ where
 {
     fn alloc(&self) -> Option<NonNull<T>> {
         let n = self.used.alloc()?;
-        let p = self.data[n].get() as *mut T;
+        let p = self.data[n].get().cast::<T>();
         Some(unsafe { NonNull::new_unchecked(p) })
     }
 
     /// safety: p must be a pointer obtained from self.alloc that hasn't been freed yet.
     unsafe fn free(&self, p: NonNull<T>) {
-        let origin = self.data.as_ptr() as *mut T;
+        let origin = self.data.as_ptr().cast::<T>();
         let n = p.as_ptr().offset_from(origin);
         assert!(n >= 0);
         assert!((n as usize) < N);
@@ -237,7 +237,7 @@ where
     where
         H: Hasher,
     {
-        <P::Item as Hash>::hash(self, state)
+        <P::Item as Hash>::hash(self, state);
     }
 }
 
