@@ -11,6 +11,9 @@ use portable_atomic::AtomicU32;
 
 use crate::atomic_bitset::AtomicBitset;
 
+/// `AtomicU32` has the same number of bits as `u32`
+pub const ATOMICU32_BITS: usize = u32::BITS as usize;
+
 /// Implementation detail. Not covered by semver guarantees.
 #[doc(hidden)]
 pub trait PoolStorage<T> {
@@ -35,13 +38,20 @@ impl<T, const N: usize, const K: usize> PoolStorageImpl<T, N, K>
 where
     [AtomicU32; K]: Sized,
 {
-    const UNINIT: UnsafeCell<MaybeUninit<T>> = UnsafeCell::new(MaybeUninit::uninit());
-
     pub const fn new() -> Self {
         Self {
             used: AtomicBitset::new(),
-            data: [Self::UNINIT; N],
+            data: [const { UnsafeCell::new(MaybeUninit::uninit()) }; N],
         }
+    }
+}
+
+impl<T, const N: usize, const K: usize> Default for PoolStorageImpl<T, N, K>
+where
+    [AtomicU32; K]: Sized,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -51,13 +61,13 @@ where
 {
     fn alloc(&self) -> Option<NonNull<T>> {
         let n = self.used.alloc()?;
-        let p = self.data[n].get() as *mut T;
+        let p = self.data[n].get().cast::<T>();
         Some(unsafe { NonNull::new_unchecked(p) })
     }
 
     /// safety: p must be a pointer obtained from self.alloc that hasn't been freed yet.
     unsafe fn free(&self, p: NonNull<T>) {
-        let origin = self.data.as_ptr() as *mut T;
+        let origin = self.data.as_ptr().cast::<T>();
         let n = p.as_ptr().offset_from(origin);
         assert!(n >= 0);
         assert!((n as usize) < N);
@@ -83,10 +93,8 @@ pub struct Box<P: Pool> {
 
 impl<P: Pool> Box<P> {
     pub fn new(item: P::Item) -> Option<Self> {
-        let p = match P::get().alloc() {
-            Some(p) => p,
-            None => return None,
-        };
+        let p = P::get().alloc()?;
+
         unsafe { p.as_ptr().write(item) };
         Some(Self { ptr: p })
     }
@@ -97,6 +105,12 @@ impl<P: Pool> Box<P> {
         res
     }
 
+    /// Constructs a box from a [`NonNull`] pointer.
+    ///
+    /// # Safety
+    /// This function is unsafe because improper use may lead to memory problems.
+    /// For example, a double-free may occur if the function is called twice on the same [`NonNull`] pointer.
+    /// See also [`std::boxed::Box#method.from_non_null`] for more information about safety and memorylayout.
     pub unsafe fn from_raw(ptr: NonNull<P::Item>) -> Self {
         Self { ptr }
     }
@@ -227,7 +241,7 @@ where
     where
         H: Hasher,
     {
-        <P::Item as Hash>::hash(self, state)
+        <P::Item as Hash>::hash(self, state);
     }
 }
 
@@ -237,9 +251,9 @@ macro_rules! pool {
         $vis struct $name { _uninhabited: ::core::convert::Infallible }
         impl $crate::Pool for $name {
             type Item = $ty;
-            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}>;
+            type Storage = $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,$crate::ATOMICU32_BITS)}>;
             fn get() -> &'static Self::Storage {
-                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {($n+31)/32}> = $crate::PoolStorageImpl::new();
+                static POOL: $crate::PoolStorageImpl<$ty, {$n}, {usize::div_ceil($n,$crate::ATOMICU32_BITS)}> = $crate::PoolStorageImpl::new();
                 &POOL
             }
         }

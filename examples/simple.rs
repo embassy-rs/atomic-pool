@@ -10,6 +10,7 @@ pool!(PacketPool: [Packet; 4]);
 fn main() {
     let box1 = Box::<PacketPool>::new(Packet(1));
     println!("allocated: {:?}", box1);
+    assert_eq!(box1.as_ref().map(|b| b.0), Some(1));
 
     let box2 = Box::<PacketPool>::new(Packet(2));
     println!("allocated: {:?}", box2);
