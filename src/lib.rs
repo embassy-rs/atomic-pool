@@ -35,12 +35,10 @@ impl<T, const N: usize, const K: usize> PoolStorageImpl<T, N, K>
 where
     [AtomicU32; K]: Sized,
 {
-    const UNINIT: UnsafeCell<MaybeUninit<T>> = UnsafeCell::new(MaybeUninit::uninit());
-
     pub const fn new() -> Self {
         Self {
             used: AtomicBitset::new(),
-            data: [Self::UNINIT; N],
+            data: [const { UnsafeCell::new(MaybeUninit::uninit()) }; N],
         }
     }
 }

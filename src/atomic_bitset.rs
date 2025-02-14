@@ -12,8 +12,9 @@ where
     [AtomicU32; K]: Sized,
 {
     pub const fn new() -> Self {
-        const Z: AtomicU32 = AtomicU32::new(0);
-        Self { used: [Z; K] }
+        Self {
+            used: [const { AtomicU32::new(0) }; K],
+        }
     }
 
     pub fn alloc(&self) -> Option<usize> {
