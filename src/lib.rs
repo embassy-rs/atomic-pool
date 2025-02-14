@@ -43,6 +43,15 @@ where
     }
 }
 
+impl<T, const N: usize, const K: usize> Default for PoolStorageImpl<T, N, K>
+where
+    [AtomicU32; K]: Sized,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T, const N: usize, const K: usize> PoolStorage<T> for PoolStorageImpl<T, N, K>
 where
     [AtomicU32; K]: Sized,
@@ -81,10 +90,8 @@ pub struct Box<P: Pool> {
 
 impl<P: Pool> Box<P> {
     pub fn new(item: P::Item) -> Option<Self> {
-        let p = match P::get().alloc() {
-            Some(p) => p,
-            None => return None,
-        };
+        let p = P::get().alloc()?;
+
         unsafe { p.as_ptr().write(item) };
         Some(Self { ptr: p })
     }
@@ -95,6 +102,8 @@ impl<P: Pool> Box<P> {
         res
     }
 
+    /// # Safety
+    /// See [`NonNull`] for safety requirements.
     pub unsafe fn from_raw(ptr: NonNull<P::Item>) -> Self {
         Self { ptr }
     }
