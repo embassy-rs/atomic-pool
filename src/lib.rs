@@ -105,8 +105,12 @@ impl<P: Pool> Box<P> {
         res
     }
 
+    /// Constructs a box from a [`NonNull`] pointer.
+    ///
     /// # Safety
-    /// See [`NonNull`] for safety requirements.
+    /// This function is unsafe because improper use may lead to memory problems.
+    /// For example, a double-free may occur if the function is called twice on the same [`NonNull`] pointer.
+    /// See also [std::boxed::Box#method.from_non_null] for more information about safety and memorylayout.
     pub unsafe fn from_raw(ptr: NonNull<P::Item>) -> Self {
         Self { ptr }
     }
