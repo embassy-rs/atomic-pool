@@ -8,6 +8,7 @@ edition = "2021"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 categories = ["embedded", "no-std", "concurrency", "memory-management"]
+rust-version = "1.79.0"
 
 [dependencies]
 as-slice-01 = { package = "as-slice", version = "0.1.5" }
